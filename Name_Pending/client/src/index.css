@@ -2,6 +2,24 @@
 @import "@fontsource-variable/geist-mono";
 @import "@Name_Pending/ui/globals.css";
 
+/* Hide scrollbars everywhere (main scroll is on main, not body) */
+html,
+body,
+main,
+[class*="overflow-auto"],
+[class*="overflow-y-auto"],
+[class*="overflow-x-auto"] {
+  scrollbar-width: none;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+main::-webkit-scrollbar,
+[class*="overflow-auto"]::-webkit-scrollbar,
+[class*="overflow-y-auto"]::-webkit-scrollbar,
+[class*="overflow-x-auto"]::-webkit-scrollbar {
+  display: none;
+}
+
 .back-to-top {
   position: fixed;
   bottom: 1.5rem;

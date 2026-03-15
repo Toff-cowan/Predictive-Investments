@@ -50,9 +50,11 @@ export default function App() {
         disableTransitionOnChange
         storageKey="vite-ui-theme"
       >
-        <div className="grid h-svh w-full grid-rows-[auto_1fr] overflow-hidden">
-          <Header />
-          <main ref={mainScrollRef} className="min-h-0 overflow-auto bg-background">
+        <div className="grid h-svh w-full grid-rows-[0_1fr] overflow-hidden">
+          <div className="relative min-h-0">
+            <Header scrollRef={mainScrollRef} />
+          </div>
+          <main ref={mainScrollRef} className="min-h-0 overflow-auto bg-background pt-14">
             <Outlet />
           </main>
           <BackToTop scrollRef={mainScrollRef} />

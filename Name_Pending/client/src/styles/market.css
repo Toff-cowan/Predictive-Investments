@@ -376,20 +376,11 @@
   scroll-behavior: smooth;
   padding-bottom: 0.5rem;
   -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
 
 .market-news-carousel::-webkit-scrollbar {
-  height: 6px;
-}
-
-.market-news-carousel::-webkit-scrollbar-track {
-  background: var(--market-bg);
-  border-radius: 3px;
-}
-
-.market-news-carousel::-webkit-scrollbar-thumb {
-  background: var(--market-border);
-  border-radius: 3px;
+  display: none;
 }
 
 .market-news-card {
@@ -456,6 +447,12 @@
   background: var(--market-accent);
   color: var(--primary-foreground);
   border-color: var(--market-accent);
+}
+
+.dark .market-dashboard .market-view-tabs button.active {
+  background: oklch(0.985 0 0);
+  color: oklch(0.145 0 0);
+  border-color: oklch(0.985 0 0);
 }
 
 .market-dashboard .market-view-tabs button:hover:not(.active) {
@@ -787,6 +784,12 @@
   border-color: var(--market-accent);
 }
 
+.dark .market-dashboard .market-period-btn.active {
+  background: oklch(0.985 0 0);
+  color: oklch(0.145 0 0);
+  border-color: oklch(0.985 0 0);
+}
+
 .market-period-selector-wrap {
   margin-bottom: 0.5rem;
 }
@@ -996,7 +999,12 @@ html:not(.dark) .market-dashboard {
 }
 
 html:not(.dark) .market-dashboard .market-view-tabs button.active,
-html:not(.dark) .market-dashboard .market-period-btn.active,
+html:not(.dark) .market-dashboard .market-period-btn.active {
+  background: oklch(0.145 0 0);
+  color: oklch(0.985 0 0);
+  border-color: oklch(0.145 0 0);
+}
+
 html:not(.dark) .market-dashboard .market-chart-fullscreen-btn:hover,
 html:not(.dark) .market-dashboard .market-stocks-see-more-btn:hover,
 html:not(.dark) .market-dashboard .market-summary-section .market-panel .sector-badge.active,

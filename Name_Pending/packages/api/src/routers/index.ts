@@ -93,6 +93,27 @@ function getOutputDir(): string {
   return findYahooOutputDir();
 }
 
+/** Path to the predicted CSV for a symbol (yahoo_top_100_output/{SYMBOL}/predicted.csv). */
+export function getPredictedCsvPath(symbol: string): string {
+  const safe = symbol.replace(/[^A-Z0-9\-]/gi, "").toUpperCase();
+  return path.join(getOutputDir(), safe, "predicted.csv");
+}
+
+/**
+ * Resolve a relative path under the output dir for CSV access. Use with GET /api/csv?path=...
+ * Allows only paths like "AAPL/predicted.csv" (no "..", only alphanumeric, hyphen, underscore, slash).
+ * Returns null if path is invalid or would escape the output dir.
+ */
+export function getCsvPathByRelativePath(relativePath: string): string | null {
+  const normalized = path.normalize(relativePath).replace(/\\/g, "/");
+  if (normalized.startsWith("..") || normalized.includes("/..") || normalized.includes("../")) return null;
+  if (!/^[A-Za-z0-9_\-/.]+$/.test(normalized)) return null;
+  const outputDir = path.resolve(getOutputDir());
+  const fullPath = path.resolve(outputDir, normalized);
+  if (!fullPath.startsWith(outputDir + path.sep) && fullPath !== outputDir) return null;
+  return fullPath;
+}
+
 function parseSummary(): MarketRow[] {
   const summaryPath = getSummaryPath();
   if (!fs.existsSync(summaryPath)) return [];

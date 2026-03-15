@@ -97,8 +97,10 @@ def main() -> None:
         result = predict(data, forecast_days)
         accuracy = backtest_accuracy(data, forecast_days)
 
-        # Write predicted CSV to file (same dir as history CSVs)
-        pred_path = os.path.join(OUTPUT_DIR, f"{symbol}_predicted.csv")
+        # Write predicted CSV to a folder for this symbol: yahoo_top_100_output/{SYMBOL}/predicted.csv
+        symbol_dir = os.path.join(OUTPUT_DIR, symbol)
+        os.makedirs(symbol_dir, exist_ok=True)
+        pred_path = os.path.join(symbol_dir, "predicted.csv")
         pred_df = pd.DataFrame(result)
         pred_df.columns = ["Date", "Predicted_Close"]
         pred_df.to_csv(pred_path, index=False)

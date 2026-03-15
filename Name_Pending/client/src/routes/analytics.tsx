@@ -1,6 +1,7 @@
 import { StockAnalyzer } from "@/components/stock-analyzer";
 import type { Route } from "./+types/analytics";
 
+
 export function meta({}: Route.MetaArgs) {
   return [
     { title: "Graphs & Analytics | Name_Pending" },
