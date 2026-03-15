@@ -10,9 +10,15 @@ import path from "node:path";
 
 const app = express();
 
+const allowedOrigins: string[] = env.CORS_ORIGIN;
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    origin: (origin, cb) => {
+      if (origin == null) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      if (allowedOrigins.some((o) => o.includes(".vercel.app")) && origin.endsWith(".vercel.app")) return cb(null, true);
+      cb(null, false);
+    },
     methods: ["GET", "POST", "OPTIONS"],
   }),
 );
