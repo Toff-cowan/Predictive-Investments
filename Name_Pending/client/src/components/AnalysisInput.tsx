@@ -11,13 +11,26 @@ const SUPPORT_TEXT = "AI predictions are not financial advice";
 
 const STOP_WORDS = /^(I|A|AN|WE|IT|DO|BE|SO|ON|AT|HE|ME|MY|UP|GO|NO|OR|AS|TO|OF|IN|IS|BY|FOR)$/;
 
+/** Keywords: treated as commands, not tickers, unless typed in ALL CAPS. */
+const KEYWORD_TICKER_LOOKALIKES = new Set(["TIPS", "COMPARE", "LIST"]);
+
+/** True if the word appears in original text in all-caps form (so we treat it as a ticker). */
+function isWordAllCapsIn(original: string, wordUpper: string): boolean {
+  const escaped = wordUpper.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(`\\b(${escaped})\\b`, "i");
+  const m = original.match(re);
+  if (!m) return false;
+  const actual = m[1]!;
+  return actual === actual.toUpperCase() && actual.length > 0;
+}
+
 /** Extracts a single ticker symbol from natural language input. */
 export function parseTickerFromInput(input: string): string | null {
   const tickers = parseTickersFromInput(input);
   return tickers.length > 0 ? tickers[tickers.length - 1]! : null;
 }
 
-/** Extracts all ticker-like symbols (e.g. "Compare AAPL and MSFT" -> ["AAPL", "MSFT"]). */
+/** Extracts all ticker-like symbols (e.g. "Compare AAPL and MSFT" -> ["AAPL", "MSFT"]). Keywords "tips", "compare", "list" are not treated as tickers unless typed in ALL CAPS. */
 export function parseTickersFromInput(input: string): string[] {
   const trimmed = input.trim();
   if (!trimmed) return [];
@@ -30,8 +43,12 @@ export function parseTickersFromInput(input: string): string[] {
       m.length <= 5 &&
       !STOP_WORDS.test(m)
   );
+  const filtered = candidates.filter((m) => {
+    if (KEYWORD_TICKER_LOOKALIKES.has(m) && !isWordAllCapsIn(trimmed, m)) return false;
+    return true;
+  });
   const seen = new Set<string>();
-  return candidates.filter((m) => {
+  return filtered.filter((m) => {
     if (seen.has(m)) return false;
     seen.add(m);
     return true;
