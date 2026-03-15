@@ -254,7 +254,7 @@ export function buildAnalysisPrompt(
 
 /**
  * Sends the structured prompt to Gemini and returns the parsed prediction object.
- * Uses model gemini-1.5-flash. Requires VITE_GEMINI_API_KEY to be set.
+ * Uses model gemini-2.5-flash (gemini-1.5-flash is deprecated). Requires VITE_GEMINI_API_KEY to be set.
  */
 export async function getStockPrediction(
   apiKey: string,
@@ -264,7 +264,7 @@ export async function getStockPrediction(
   try {
     const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       systemInstruction: GEMINI_SYSTEM_INSTRUCTION,
     });
 
