@@ -3,6 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@pi/ui/components/card";
 import { Button } from "@pi/ui/components/button";
 import { trpc } from "@/utils/trpc";
+import { InsightTrigger } from "@/components/InsightTrigger";
 import {
   Area,
   AreaChart,
@@ -49,8 +50,13 @@ export function PerformanceChart() {
   return (
     <Card className="rounded-lg border border-border bg-card">
       <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 pb-2">
-        <CardTitle className="text-lg font-semibold text-foreground">
+        <CardTitle className="flex items-center gap-1.5 text-lg font-semibold text-foreground">
           {firstSymbol} Price History
+          <InsightTrigger
+            hint="Historical close prices, normalized to 100 at the start."
+            topic="how to read price history charts and normalized performance"
+            ariaLabel="Learn about price history"
+          />
         </CardTitle>
         <div className="flex gap-1 rounded-lg bg-secondary p-1">
           {periods.map((p) => (

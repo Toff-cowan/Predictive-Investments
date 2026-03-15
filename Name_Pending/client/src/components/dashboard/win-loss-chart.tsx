@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@pi/ui/components/card";
 import { trpc } from "@/utils/trpc";
+import { InsightTrigger } from "@/components/InsightTrigger";
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
 
 export function WinLossChart() {
@@ -58,8 +59,13 @@ export function WinLossChart() {
   return (
     <Card className="rounded-lg border border-border bg-card">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg font-semibold text-foreground">
+        <CardTitle className="flex items-center gap-1.5 text-lg font-semibold text-foreground">
           Gainers vs Losers
+          <InsightTrigger
+            hint="Share of stocks up vs down today."
+            topic="gainers vs losers and what it says about market sentiment"
+            ariaLabel="Learn about gainers vs losers"
+          />
         </CardTitle>
       </CardHeader>
       <CardContent>

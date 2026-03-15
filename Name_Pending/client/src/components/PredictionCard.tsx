@@ -5,6 +5,7 @@
 import { useState, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@pi/ui/components/card";
 import { Button } from "@pi/ui/components/button";
+import { InsightTrigger } from "@/components/InsightTrigger";
 import type {
   StockPrediction,
   PredictionDirection,
@@ -87,13 +88,18 @@ export function PredictionCard({
     <Card className="w-full max-w-2xl mx-auto overflow-hidden">
       <CardHeader className="pb-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle className="text-xl">
+          <CardTitle className="flex items-center gap-1.5 text-xl">
             {prediction.ticker}
             {companyName ? (
               <span className="ml-2 font-normal text-muted-foreground">
                 {companyName}
               </span>
             ) : null}
+            <InsightTrigger
+              hint="AI-generated outlook and confidence based on price, news, and sentiment."
+              topic="how to interpret stock prediction and confidence scores"
+              ariaLabel="Learn about this prediction"
+            />
           </CardTitle>
           <span className="text-sm text-muted-foreground">{analyzedAt}</span>
         </div>

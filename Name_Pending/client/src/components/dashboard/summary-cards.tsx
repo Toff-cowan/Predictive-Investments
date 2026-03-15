@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@pi/ui/components/card";
 import { trpc } from "@/utils/trpc";
+import { InsightTrigger } from "@/components/InsightTrigger";
 import { TrendingUp, TrendingDown, DollarSign, BarChart3 } from "lucide-react";
 
 function formatMarketCap(n: number): string {
@@ -30,6 +31,8 @@ export function SummaryCards() {
       change: `${avgChange >= 0 ? "+" : ""}${avgChange.toFixed(2)}%`,
       trend: avgTrend as "up" | "down",
       icon: DollarSign,
+      hint: "Total value of all tracked stocks at current prices.",
+      topic: "market capitalization and what it means for investors",
     },
     {
       title: "Gainers",
@@ -37,6 +40,8 @@ export function SummaryCards() {
       change: rows.length ? `${((gainers / rows.length) * 100).toFixed(0)}% of ${rows.length}` : "—",
       trend: "up" as const,
       icon: TrendingUp,
+      hint: "Stocks whose price went up today.",
+      topic: "why some stocks are gainers and how to read daily moves",
     },
     {
       title: "Losers",
@@ -44,6 +49,8 @@ export function SummaryCards() {
       change: rows.length ? `${((losers / rows.length) * 100).toFixed(0)}% of ${rows.length}` : "—",
       trend: "down" as const,
       icon: TrendingDown,
+      hint: "Stocks whose price went down today.",
+      topic: "how to interpret daily losers in context",
     },
     {
       title: "Avg Daily Change",
@@ -51,6 +58,8 @@ export function SummaryCards() {
       change: "across scraped symbols",
       trend: avgTrend as "up" | "down",
       icon: BarChart3,
+      hint: "Average percentage change across all symbols we track.",
+      topic: "average daily change and market breadth",
     },
   ];
 
@@ -82,7 +91,14 @@ export function SummaryCards() {
                 </div>
               </div>
               <div className="mt-4">
-                <p className="text-sm text-muted-foreground">{item.title}</p>
+                <p className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                  {item.title}
+                  <InsightTrigger
+                    hint={item.hint}
+                    topic={item.topic}
+                    ariaLabel={`Learn about ${item.title}`}
+                  />
+                </p>
                 <p className="mt-1 text-2xl font-semibold text-foreground">
                   {marketQuery.isLoading ? "…" : item.value}
                 </p>

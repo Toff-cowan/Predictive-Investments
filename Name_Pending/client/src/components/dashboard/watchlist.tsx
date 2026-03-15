@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@pi/ui/components/card";
 import { trpc } from "@/utils/trpc";
+import { InsightTrigger } from "@/components/InsightTrigger";
 import { TrendingUp, TrendingDown, Star } from "lucide-react";
 
 export function Watchlist() {
@@ -12,8 +13,13 @@ export function Watchlist() {
   return (
     <Card className="rounded-lg border border-border bg-card">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg font-semibold text-foreground">
+        <CardTitle className="flex items-center gap-1.5 text-lg font-semibold text-foreground">
           Watchlist
+          <InsightTrigger
+            hint="A shortlist of symbols and their latest price and change."
+            topic="what a watchlist is and how to use it for tracking stocks"
+            ariaLabel="Learn about watchlist"
+          />
         </CardTitle>
         <span className="rounded-md bg-secondary px-2 py-0.5 text-xs text-muted-foreground">
           {watchlistStocks.length} stocks

@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@pi/ui/components/card";
 import { trpc } from "@/utils/trpc";
+import { InsightTrigger } from "@/components/InsightTrigger";
 import { Clock, ExternalLink } from "lucide-react";
 
 function formatTime(published: string): string {
@@ -29,8 +30,13 @@ export function NewsFeed() {
   return (
     <Card className="rounded-lg border border-border bg-card">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-lg font-semibold text-foreground">
+        <CardTitle className="flex items-center gap-1.5 text-lg font-semibold text-foreground">
           Market News
+          <InsightTrigger
+            hint="Recent headlines for the tracked symbol."
+            topic="why market news matters for stock analysis"
+            ariaLabel="Learn about market news"
+          />
         </CardTitle>
         <Link to="/market" className="text-sm text-primary hover:underline">
           View all

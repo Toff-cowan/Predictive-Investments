@@ -16,6 +16,7 @@ import {
 import type { StockPrediction, StockPredictionError } from "@/types/stock";
 import { AnalysisInput, parseTickersFromInput } from "@/components/AnalysisInput";
 import { PredictionCard } from "@/components/PredictionCard";
+import { InsightTrigger } from "@/components/InsightTrigger";
 import { cn } from "@pi/ui/lib/utils";
 
 import type { Route } from "./+types/lab";
@@ -353,9 +354,16 @@ export default function Lab() {
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] flex-col">
       <div className="w-full max-w-4xl mx-auto px-4 py-6 flex flex-col flex-1 min-h-0">
-        <h1 className="mb-2 text-2xl font-semibold text-center">
-          Chatroom & Prediction Lab
-        </h1>
+        <div className="mb-2 flex items-center justify-center gap-1.5">
+          <h1 className="text-2xl font-semibold">
+            Chatroom & Prediction Lab
+          </h1>
+          <InsightTrigger
+            hint="Ask for analysis, tips, or comparisons; AI explains and predicts."
+            topic="how AI stock analysis and predictions work and how to use them"
+            ariaLabel="Learn about the Lab"
+          />
+        </div>
         <p className="text-muted-foreground text-center">
           Ask about a stock to get an AI-powered analysis and prediction.
         </p>

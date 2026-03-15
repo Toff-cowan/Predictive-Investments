@@ -347,3 +347,38 @@ export async function getGeneralResponse(
     };
   }
 }
+
+/** Prompt for short educational insights (1–2 sentences). */
+const INSIGHT_INSTRUCTION = `You are a concise financial educator. Answer in one or two short sentences only. Be clear and neutral; do not give buy/sell advice.`;
+
+/**
+ * Fetches a brief AI explanation for a topic (e.g. "market cap", "gainers vs losers").
+ * Used for subtle in-app educational hints.
+ */
+export async function getShortInsight(
+  apiKey: string,
+  topic: string,
+  context?: string
+): Promise<{ text: string } | StockPredictionError> {
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      systemInstruction: INSIGHT_INSTRUCTION,
+    });
+    const prompt = context
+      ? `Topic: ${topic}\nContext: ${context}\n\nExplain briefly for an investor.`
+      : `Explain this in 1–2 sentences for an investor: ${topic}.`;
+    const result = await model.generateContent(prompt);
+    const text = result.response.text()?.trim();
+    if (!text) return { error: true, message: "Empty response from AI" };
+    return { text };
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Unknown error calling Gemini";
+    return {
+      error: true,
+      message: message.includes("API key") ? "Invalid or missing Gemini API key" : message,
+    };
+  }
+}
