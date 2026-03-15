@@ -327,6 +327,7 @@ function findPredictScript(): string | null {
   const candidates = [
     path.join(cwd, "scripts", "predict_stock.py"),
     path.join(cwd, "server", "scripts", "predict_stock.py"),
+    path.join(cwd, "pi", "server", "scripts", "predict_stock.py"),
     path.join(cwd, "Name_Pending", "server", "scripts", "predict_stock.py"),
     path.join(cwd, "Name_pending", "server", "scripts", "predict_stock.py"),
   ];
