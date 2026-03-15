@@ -48,9 +48,13 @@ export default function Lab() {
 
   const runAnalysis = useCallback(
     async (ticker: string) => {
+      // eslint-disable-next-line no-console
+      console.log("[Lab] runAnalysis called", { ticker });
       if (!env.VITE_GEMINI_API_KEY?.trim()) {
         setError("Gemini API key is not set. Add VITE_GEMINI_API_KEY to your .env.");
         setState("error");
+        // eslint-disable-next-line no-console
+        console.warn("[Lab] Missing Gemini API key");
         return;
       }
 
@@ -96,6 +100,11 @@ export default function Lab() {
         );
 
         if ("error" in prediction && prediction.error) {
+          // eslint-disable-next-line no-console
+          console.error("[Lab] Prediction error from Gemini", {
+            ticker: symbol,
+            message: (prediction as StockPredictionError).message,
+          });
           setError((prediction as StockPredictionError).message);
           setState("error");
           return;
@@ -104,9 +113,18 @@ export default function Lab() {
         setResult(prediction as StockPrediction);
         setAnalyzedAt(formatAnalyzedAt());
         setState("success");
+        // eslint-disable-next-line no-console
+        console.log("[Lab] Prediction success", {
+          ticker: symbol,
+          prediction: (prediction as StockPrediction).prediction,
+          recommendation: (prediction as StockPrediction).recommendation,
+          confidence: (prediction as StockPrediction).confidence,
+        });
       } catch (err) {
         const message =
           err instanceof Error ? err.message : "Analysis failed.";
+        // eslint-disable-next-line no-console
+        console.error("[Lab] runAnalysis threw", { ticker, error: message });
         setError(message);
         setState("error");
       }

@@ -39,17 +39,28 @@ export function AnalysisInput({
   const [value, setValue] = useState("");
 
   const handleSubmit = useCallback(() => {
+    // Log every submit attempt so we can see when the button is pressed
+    // and whether the ticker parsing succeeds.
+    // eslint-disable-next-line no-console
+    console.log("[Lab] Analyze button pressed", {
+      rawInput: value,
+      disabled,
+    });
     const ticker = parseTickerFromInput(value);
+    // eslint-disable-next-line no-console
+    console.log("[Lab] Parsed ticker", { rawInput: value, ticker });
     if (ticker) {
       onSubmit(ticker);
       setValue("");
     }
-  }, [value, onSubmit]);
+  }, [value, disabled, onSubmit]);
 
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (e.key === "Enter") {
         e.preventDefault();
+        // eslint-disable-next-line no-console
+        console.log("[Lab] Enter key pressed in AnalysisInput");
         handleSubmit();
       }
     },
