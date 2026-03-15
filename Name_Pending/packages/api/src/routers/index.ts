@@ -120,10 +120,10 @@ function parseSummary(): MarketRow[] {
   const raw = fs.readFileSync(summaryPath, "utf-8");
   const lines = raw.trim().split(/\r?\n/);
   if (lines.length < 2) return [];
-  const headers = lines[0].split(",").map((h) => h.trim());
+  const headers = (lines[0] ?? "").split(",").map((h) => h.trim());
   const rows: MarketRow[] = [];
   for (let i = 1; i < lines.length; i++) {
-    const values = parseCSVLine(lines[i]);
+    const values = parseCSVLine(lines[i] ?? "");
     const row: Record<string, string> = {};
     headers.forEach((h, j) => {
       row[h] = values[j] ?? "";
@@ -632,8 +632,8 @@ export const appRouter = router({
         if (lines.length < 2) return { ok: true, data: [] };
         const data: OHLC[] = [];
         for (let i = 1; i < lines.length; i++) {
-          const parts = parseCSVLine(lines[i]);
-          const date = parts[0]?.split(" ")[0] ?? "";
+          const parts = parseCSVLine(lines[i] ?? "");
+          const date = (parts[0]?.split(" ")[0]) ?? "";
           const open = parseFloat(parts[1] ?? "0") || 0;
           const high = parseFloat(parts[2] ?? "0") || 0;
           const low = parseFloat(parts[3] ?? "0") || 0;
