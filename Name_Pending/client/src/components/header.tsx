@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { NavLink } from "react-router";
+import { NavLink, useNavigate } from "react-router";
 import {
   LayoutDashboard,
   Newspaper,
@@ -32,10 +32,12 @@ export default function Header({
   const lastScrollTop = useRef(0);
   const { data: user } = useQuery(trpc.auth.me.queryOptions());
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   const handleLogout = async () => {
     await logout();
     await queryClient.invalidateQueries(trpc.auth.me.queryOptions());
+    navigate("/", { replace: true });
   };
 
   useEffect(() => {
@@ -59,13 +61,24 @@ export default function Header({
       className={`app-header fixed left-0 right-0 top-0 z-50 flex items-center justify-between gap-2 bg-transparent px-4 py-3 transition-transform duration-300 sm:gap-4 ${hidden ? "-translate-y-full" : "translate-y-0"}`}
     >
       <div className="flex items-center">
-        {!user && (
+        {!user ? (
           <NavLink
             to="/login"
             className="rounded-md p-2 text-lg font-medium text-foreground/80 transition-colors hover:text-accent-foreground md:px-2"
           >
             Log in
           </NavLink>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleLogout}
+            className="gap-1.5 text-lg font-medium text-foreground/80 hover:text-accent-foreground md:px-2"
+            aria-label="Log out"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden sm:inline">Log out</span>
+          </Button>
         )}
       </div>
       <div className="flex items-center gap-2 text-lg sm:gap-4">
@@ -86,21 +99,9 @@ export default function Header({
           ))}
         </nav>
         {user ? (
-          <>
-            <span className="hidden text-sm text-muted-foreground sm:inline">
-              {user.email}
-            </span>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="gap-1.5"
-              aria-label="Log out"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden sm:inline">Log out</span>
-            </Button>
-          </>
+          <span className="hidden text-sm text-muted-foreground sm:inline">
+            {user.email}
+          </span>
         ) : null}
         <ModeToggle />
       </div>

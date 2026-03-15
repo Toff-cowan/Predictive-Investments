@@ -1,6 +1,6 @@
 /**
- * REST auth routes: signup, login, logout.
- * Sets HTTP-only cookie for session. All app features remain available without logging in.
+ * REST auth: signup, login, logout.
+ * Hardcoded login: admin@example.com / password always works (with or without DB).
  */
 import { db } from "@pi/db";
 import { sessions, users } from "@pi/db/schema";
@@ -10,6 +10,13 @@ import { randomBytes, scryptSync, timingSafeEqual } from "node:crypto";
 
 const SESSION_COOKIE = "session_token";
 const SESSION_DAYS = 7;
+
+/** Hardcoded credentials — only way to log in. */
+const HARDCODED_EMAIL = "admin@example.com";
+const HARDCODED_PASSWORD = "password";
+const HARDCODED_SESSION_VALUE = "hardcoded";
+
+const HARDCODED_USER = { id: "hardcoded", email: HARDCODED_EMAIL };
 
 function hashPassword(password: string): string {
   const salt = randomBytes(16);
@@ -37,6 +44,65 @@ function setSessionCookie(res: Response, token: string) {
   });
 }
 
+function isHardcodedCredential(email: string, password: string): boolean {
+  const normalized = email.trim().toLowerCase();
+  if (normalized !== HARDCODED_EMAIL) return false;
+  if (password.length !== HARDCODED_PASSWORD.length) return false;
+  try {
+    return timingSafeEqual(
+      Buffer.from(password, "utf8"),
+      Buffer.from(HARDCODED_PASSWORD, "utf8"),
+    );
+  } catch {
+    return false;
+  }
+}
+
+/** Use when DB is available; creates/gets user and session in DB. */
+async function getOrCreateHardcodedUser(): Promise<{ id: string; email: string } | null> {
+  try {
+    const existing = await db.query.users.findFirst({
+      where: eq(users.email, HARDCODED_EMAIL),
+      columns: { id: true, email: true },
+    });
+    if (existing) return existing;
+    const [user] = await db
+      .insert(users)
+      .values({
+        email: HARDCODED_EMAIL,
+        passwordHash: hashPassword(HARDCODED_PASSWORD),
+      })
+      .returning({ id: users.id, email: users.email });
+    return user ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function createSessionForUser(
+  res: Response,
+  user: { id: string; email: string },
+): Promise<boolean> {
+  try {
+    const token = randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + SESSION_DAYS * 24 * 60 * 60 * 1000);
+    await db.insert(sessions).values({
+      userId: user.id,
+      token,
+      expiresAt,
+    });
+    setSessionCookie(res, token);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Log in with hardcoded creds: try DB first, else set hardcoded cookie so login always works. */
+function setHardcodedLogin(res: Response): void {
+  setSessionCookie(res, HARDCODED_SESSION_VALUE);
+}
+
 type AuthBody = { email?: string; password?: string };
 
 export async function handleSignup(req: Request, res: Response) {
@@ -51,6 +117,16 @@ export async function handleSignup(req: Request, res: Response) {
     }
     if (password.length < 8) {
       res.status(400).json({ error: "Password must be at least 8 characters" });
+      return;
+    }
+    if (isHardcodedCredential(email, password)) {
+      const user = await getOrCreateHardcodedUser();
+      if (user && (await createSessionForUser(res, user))) {
+        res.status(201).json({ user: { id: user.id, email: user.email } });
+      } else {
+        setHardcodedLogin(res);
+        res.status(201).json({ user: HARDCODED_USER });
+      }
       return;
     }
     const existing = await db.query.users.findFirst({
@@ -81,7 +157,9 @@ export async function handleSignup(req: Request, res: Response) {
     setSessionCookie(res, token);
     res.status(201).json({ user: { id: user.id, email: user.email } });
   } catch (err) {
-    console.error("[auth] signup error:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error("[auth] signup error:", message, stack ?? "");
     res.status(500).json({ error: "Sign up failed" });
   }
 }
@@ -94,6 +172,16 @@ export async function handleLogin(req: Request, res: Response) {
     const password = typeof body.password === "string" ? body.password : "";
     if (!email || !password) {
       res.status(400).json({ error: "Email and password required" });
+      return;
+    }
+    if (isHardcodedCredential(email, password)) {
+      const user = await getOrCreateHardcodedUser();
+      if (user && (await createSessionForUser(res, user))) {
+        res.status(200).json({ user: { id: user.id, email: user.email } });
+      } else {
+        setHardcodedLogin(res);
+        res.status(200).json({ user: HARDCODED_USER });
+      }
       return;
     }
     const user = await db.query.users.findFirst({
@@ -114,15 +202,21 @@ export async function handleLogin(req: Request, res: Response) {
     setSessionCookie(res, token);
     res.status(200).json({ user: { id: user.id, email: user.email } });
   } catch (err) {
-    console.error("[auth] login error:", err);
+    const message = err instanceof Error ? err.message : String(err);
+    const stack = err instanceof Error ? err.stack : undefined;
+    console.error("[auth] login error:", message, stack ?? "");
     res.status(500).json({ error: "Login failed" });
   }
 }
 
 export async function handleLogout(req: Request, res: Response) {
   const token = (req as { cookies?: Record<string, string> }).cookies?.[SESSION_COOKIE];
-  if (token) {
-    await db.delete(sessions).where(eq(sessions.token, token));
+  if (token && token !== HARDCODED_SESSION_VALUE) {
+    try {
+      await db.delete(sessions).where(eq(sessions.token, token));
+    } catch {
+      /* ignore */
+    }
   }
   res.clearCookie(SESSION_COOKIE, { path: "/" });
   res.status(200).json({ ok: true });

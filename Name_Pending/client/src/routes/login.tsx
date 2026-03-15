@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@pi/ui/components/button";
 import { Input } from "@pi/ui/components/input";
@@ -10,14 +10,16 @@ import type { Route } from "./+types/login";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "PI | Predictive Investment" },
+    { title: "Log in | PI - Predictive Investment" },
     { name: "description", content: "Log in to your account" },
   ];
 }
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
+  const from = (location.state as { from?: string } | null)?.from ?? "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export default function Login() {
         return;
       }
       await queryClient.invalidateQueries(trpc.auth.me.queryOptions());
-      navigate("/", { replace: true });
+      navigate(from, { replace: true });
     } finally {
       setLoading(false);
     }
@@ -42,7 +44,7 @@ export default function Login() {
 
   return (
     <div className="mx-auto flex min-h-[60vh] max-w-sm flex-col justify-center px-4 py-12">
-      <h1 className="mb-2 text-center text-2xl font-semibold">PI</h1>
+      <h1 className="mb-2 text-2xl font-semibold">Log in</h1>
       <p className="mb-6 text-muted-foreground">
         Use your account to continue. All features work without an account.
       </p>
@@ -76,8 +78,8 @@ export default function Login() {
             {error}
           </p>
         )}
-        <Button type="submit" disabled={loading} className="justify-center">
-          {loading ? "Signing in…" : "Login"}
+        <Button type="submit" disabled={loading}>
+          {loading ? "Logging in…" : "Log in"}
         </Button>
       </form>
       <p className="mt-6 text-center text-sm text-muted-foreground">

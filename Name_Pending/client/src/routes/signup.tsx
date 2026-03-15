@@ -43,6 +43,7 @@ export default function Signup() {
         return;
       }
       await queryClient.invalidateQueries(trpc.auth.me.queryOptions());
+      await queryClient.refetchQueries(trpc.auth.me.queryOptions());
       navigate("/", { replace: true });
     } finally {
       setLoading(false);

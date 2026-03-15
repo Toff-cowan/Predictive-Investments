@@ -28,7 +28,7 @@
   "devDependencies": {
     "@pi/config": "*",
     "@types/pg": "^8.16.0",
-    "drizzle-kit": "^0.18.1",
+    "drizzle-kit": "^0.31.9",
     "typescript": "^5"
   }
 }

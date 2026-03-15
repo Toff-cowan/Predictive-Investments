@@ -43,6 +43,25 @@ npm run dev
 ```
 
 Open [http://localhost:5173](http://localhost:5173) in your browser to see the web application.
+
+### Deploying to Render (fixing signup/login 500)
+
+If `POST /auth/signup` or `/auth/login` returns **500** on Render, the usual cause is the production database is missing the auth tables or `DATABASE_URL` is not set.
+
+1. **Set `DATABASE_URL`**  
+   In Render: your **Web Service** → **Environment** → add `DATABASE_URL` with your Postgres connection string (e.g. from a Render Postgres instance: **Internal Database URL** or **External**).
+
+2. **Create auth tables in that database**  
+   From your machine (with the same `DATABASE_URL` as production), run:
+   ```bash
+   # Use the production DB URL, e.g. from Render dashboard
+   set DATABASE_URL=<your-render-postgres-url>
+   npm run db:push
+   ```
+   Or put `DATABASE_URL` in `server/.env` temporarily and run `npm run db:push` from the repo root.
+
+3. **Check logs**  
+   After redeploying, the server logs either **"Database OK (auth tables ready)"** or **"Database check failed — ..."**. On signup error, the log line **"[auth] signup error: ..."** shows the exact cause (e.g. missing table, connection refused).
 The API is running at [http://localhost:3000](http://localhost:3000).
 
 ## UI Customization

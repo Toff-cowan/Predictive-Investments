@@ -1,13 +1,22 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
+
+// Load server/.env first so ACCOUNT_EMAIL, ACCOUNT_PASSWORD, etc. are available
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+dotenv.config({ path: path.join(__dirname, "..", ".env") });
+
 import { createContext } from "@pi/api/context";
 import { getCsvPathByRelativePath, getPredictedCsvPath } from "@pi/api/routers/index";
 import { appRouter } from "@pi/api/routers/index";
+import { db } from "@pi/db";
+import { users } from "@pi/db/schema";
 import { env } from "@pi/env/server";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import fs from "node:fs";
-import path from "node:path";
 import { handleLogin, handleLogout, handleSignup } from "./auth";
 
 const app = express();
@@ -89,6 +98,13 @@ app.get("/api/csv", (req, res) => {
 });
 
 const PORT = process.env.PORT ?? 3000;
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
+  try {
+    await db.select({ id: users.id }).from(users).limit(0);
+    console.log("Database OK (auth tables ready)");
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error("Database check failed — signup/login will return 500 until fixed:", msg);
+  }
 });
