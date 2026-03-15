@@ -6,28 +6,41 @@ import { ArrowRight } from "lucide-react";
 import { Button } from "@pi/ui/components/button";
 import { Input } from "@pi/ui/components/input";
 
-const PLACEHOLDER = "Ask about a stock... e.g. Analyze AAPL";
+const PLACEHOLDER = "Ask anything: tips, list stocks, analyze AAPL, compare AAPL and MSFT…";
 const SUPPORT_TEXT = "AI predictions are not financial advice";
 
-/** Extracts a ticker symbol from natural language input (e.g. "Analyze AAPL" -> "AAPL", "What about TSLA?" -> "TSLA"). */
+const STOP_WORDS = /^(I|A|AN|WE|IT|DO|BE|SO|ON|AT|HE|ME|MY|UP|GO|NO|OR|AS|TO|OF|IN|IS|BY|FOR)$/;
+
+/** Extracts a single ticker symbol from natural language input. */
 export function parseTickerFromInput(input: string): string | null {
+  const tickers = parseTickersFromInput(input);
+  return tickers.length > 0 ? tickers[tickers.length - 1]! : null;
+}
+
+/** Extracts all ticker-like symbols (e.g. "Compare AAPL and MSFT" -> ["AAPL", "MSFT"]). */
+export function parseTickersFromInput(input: string): string[] {
   const trimmed = input.trim();
-  if (!trimmed) return null;
+  if (!trimmed) return [];
   const upper = trimmed.toUpperCase();
   const tickerPattern = /\b([A-Z]{1,5}(?:\.[A-Z]+)?)\b/g;
-  const matches = upper.match(tickerPattern);
-  if (matches && matches.length > 0) {
-    const candidates = matches.filter((m) => m.length >= 2 && m.length <= 5 && !/^(I|A|AN|WE|IT|DO|BE|SO|ON|AT|HE|ME|MY|UP|GO|NO|OR|AS|TO|OF|IN|IS|BY|FOR)$/.test(m));
-    const preferred = candidates.length > 0 ? candidates[candidates.length - 1]! : matches[0]!;
-    return preferred ?? null;
-  }
-  if (/^[A-Za-z]{1,5}(\.[A-Za-z]+)?$/.test(trimmed)) return trimmed.toUpperCase();
-  return null;
+  const matches = upper.match(tickerPattern) ?? [];
+  const candidates = matches.filter(
+    (m) =>
+      m.length >= 2 &&
+      m.length <= 5 &&
+      !STOP_WORDS.test(m)
+  );
+  const seen = new Set<string>();
+  return candidates.filter((m) => {
+    if (seen.has(m)) return false;
+    seen.add(m);
+    return true;
+  });
 }
 
 export interface AnalysisInputProps {
-  /** Called with parsed ticker and the raw user message (for chat display). */
-  onSubmit: (ticker: string, userMessage: string) => void;
+  /** Called with the raw user message. Lab parses tickers and routes to analyze / general / compare. */
+  onSubmit: (userMessage: string) => void;
   disabled?: boolean;
   placeholder?: string;
 }
@@ -40,21 +53,12 @@ export function AnalysisInput({
   const [value, setValue] = useState("");
 
   const handleSubmit = useCallback(() => {
-    // Log every submit attempt so we can see when the button is pressed
-    // and whether the ticker parsing succeeds.
+    const rawMessage = value.trim();
+    if (!rawMessage) return;
     // eslint-disable-next-line no-console
-    console.log("[Lab] Analyze button pressed", {
-      rawInput: value,
-      disabled,
-    });
-    const ticker = parseTickerFromInput(value);
-    // eslint-disable-next-line no-console
-    console.log("[Lab] Parsed ticker", { rawInput: value, ticker });
-    if (ticker) {
-      const rawMessage = value.trim();
-      onSubmit(ticker, rawMessage || ticker);
-      setValue("");
-    }
+    console.log("[Lab] Submit", { rawInput: rawMessage, disabled });
+    onSubmit(rawMessage);
+    setValue("");
   }, [value, disabled, onSubmit]);
 
   const handleKeyDown = useCallback(
@@ -89,7 +93,7 @@ export function AnalysisInput({
           className="absolute right-2 h-9 w-9 rounded-full"
           onClick={handleSubmit}
           disabled={disabled || !value.trim()}
-          aria-label="Analyze"
+          aria-label="Send"
         >
           <ArrowRight className="h-4 w-4" />
         </Button>

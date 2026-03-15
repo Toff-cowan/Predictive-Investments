@@ -301,3 +301,49 @@ export async function getStockPrediction(
     };
   }
 }
+
+/** System instruction for general Q&A (tips, list stocks, etc.). */
+const GENERAL_ASSISTANT_INSTRUCTION = `You are a helpful financial assistant for a stock analysis app. The user may ask for:
+- Tips or general investing advice
+- A list of stocks we track (you will receive context with symbols and names)
+- Comparison of two or more stocks (you will receive data for each)
+- General market questions
+
+Answer in clear, concise plain text. Use short paragraphs and bullet points where helpful. Do not use markdown code blocks for long output. Never recommend specific buy/sell actions; give educational context only. If the user asks to list stocks, present the list clearly from the context provided.`;
+
+/**
+ * Sends a free-form question and optional context to Gemini; returns plain text.
+ * Used for tips, listing stocks, and stock comparisons.
+ */
+export async function getGeneralResponse(
+  apiKey: string,
+  userMessage: string,
+  context?: string
+): Promise<{ text: string } | StockPredictionError> {
+  try {
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.5-flash",
+      systemInstruction: GENERAL_ASSISTANT_INSTRUCTION,
+    });
+
+    const prompt = context
+      ? `Context (use this to answer):\n${context}\n\nUser question: ${userMessage}`
+      : userMessage;
+
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const text = response.text();
+    if (!text || !text.trim()) {
+      return { error: true, message: "Empty response from AI" };
+    }
+    return { text: text.trim() };
+  } catch (err) {
+    const message =
+      err instanceof Error ? err.message : "Unknown error calling Gemini";
+    return {
+      error: true,
+      message: message.includes("API key") ? "Invalid or missing Gemini API key" : message,
+    };
+  }
+}

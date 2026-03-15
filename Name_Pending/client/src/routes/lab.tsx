@@ -9,11 +9,12 @@ import { env } from "@pi/env/web";
 import {
   buildAnalysisPrompt,
   getStockPrediction,
+  getGeneralResponse,
   derivePriceDataFromOhlc,
   mapNewsToNewsData,
 } from "@/lib/stockAnalysis";
 import type { StockPrediction, StockPredictionError } from "@/types/stock";
-import { AnalysisInput } from "@/components/AnalysisInput";
+import { AnalysisInput, parseTickersFromInput } from "@/components/AnalysisInput";
 import { PredictionCard } from "@/components/PredictionCard";
 import { cn } from "@pi/ui/lib/utils";
 
@@ -42,8 +43,9 @@ type ChatEntry =
       analyzedAt: string;
       userMessage: string;
     }
+  | { id: string; type: "assistantText"; text: string; userMessage: string }
   | { id: string; type: "error"; message: string; userMessage: string }
-  | { id: string; type: "loading"; ticker: string; userMessage: string };
+  | { id: string; type: "loading"; userMessage: string; tickers: string[] };
 
 function formatAnalyzedAt(): string {
   return new Date().toLocaleString(undefined, {
@@ -68,40 +70,28 @@ export default function Lab() {
     feedRef.current?.scrollTo({ top: feedRef.current.scrollHeight, behavior: "smooth" });
   }, [messages]);
 
-  const runAnalysis = useCallback(
-    async (ticker: string, userMessage: string) => {
-      // eslint-disable-next-line no-console
-      console.log("[Lab] runAnalysis called", { ticker, userMessage });
-      if (!env.VITE_GEMINI_API_KEY?.trim()) {
-        setMessages((prev) => [
-          ...prev,
-          { id: nextId(), type: "user", content: userMessage, ticker },
-          {
-            id: nextId(),
-            type: "error",
-            message: "Gemini API key is not set. Add VITE_GEMINI_API_KEY to your .env.",
-            userMessage,
-          },
-        ]);
-        setState("error");
+  const replaceLoadingWith = useCallback(
+    (loadingId: string, entry: Extract<ChatEntry, { type: "assistant" } | { type: "assistantText" } | { type: "error" }>) => {
+      setMessages((prev) =>
+        prev.map((m) => (m.id === loadingId ? { ...entry, id: m.id } : m))
+      );
+      setState(entry.type === "error" ? "error" : "success");
+    },
+    []
+  );
+
+  const runSingleAnalysis = useCallback(
+    async (ticker: string, userMessage: string, loadingId: string) => {
+      const apiKey = env.VITE_GEMINI_API_KEY?.trim();
+      if (!apiKey) {
+        replaceLoadingWith(loadingId, {
+          id: loadingId,
+          type: "error",
+          message: "Gemini API key is not set. Add VITE_GEMINI_API_KEY to your .env.",
+          userMessage,
+        });
         return;
       }
-
-      const userEntry: ChatEntry = {
-        id: nextId(),
-        type: "user",
-        content: userMessage,
-        ticker,
-      };
-      const loadingId = nextId();
-      const loadingEntry: ChatEntry = {
-        id: loadingId,
-        type: "loading",
-        ticker,
-        userMessage,
-      };
-      setMessages((prev) => [...prev, userEntry, loadingEntry]);
-      setState("loading");
 
       try {
         const symbol = ticker.toUpperCase().replace(/[^A-Z0-9\-.]/g, "");
@@ -132,72 +122,217 @@ export default function Lab() {
           newsData
         );
 
-        const prediction = await getStockPrediction(
-          env.VITE_GEMINI_API_KEY,
-          symbol,
-          promptPayload
-        );
+        const prediction = await getStockPrediction(apiKey, symbol, promptPayload);
 
         if ("error" in prediction && prediction.error) {
-          // eslint-disable-next-line no-console
-          console.error("[Lab] Prediction error from Gemini", {
-            ticker: symbol,
+          replaceLoadingWith(loadingId, {
+            id: loadingId,
+            type: "error",
             message: (prediction as StockPredictionError).message,
+            userMessage,
           });
-          setMessages((prev) =>
-            prev.map((m) =>
-              m.id === loadingId
-                ? {
-                    id: m.id,
-                    type: "error" as const,
-                    message: (prediction as StockPredictionError).message,
-                    userMessage,
-                  }
-                : m
-            )
-          );
-          setState("error");
           return;
         }
 
-        const resultEntry: ChatEntry = {
-          id: nextId(),
+        replaceLoadingWith(loadingId, {
+          id: loadingId,
           type: "assistant",
           prediction: prediction as StockPrediction,
           companyName,
           analyzedAt: formatAnalyzedAt(),
           userMessage,
-        };
-        setMessages((prev) =>
-          prev.map((m) => (m.id === loadingId ? resultEntry : m))
-        );
-        setState("success");
-        // eslint-disable-next-line no-console
-        console.log("[Lab] Prediction success", {
-          ticker: symbol,
-          prediction: (prediction as StockPrediction).prediction,
         });
       } catch (err) {
-        const message =
-          err instanceof Error ? err.message : "Analysis failed.";
-        // eslint-disable-next-line no-console
-        console.error("[Lab] runAnalysis threw", { ticker, error: message });
-        setMessages((prev) =>
-          prev.map((m) =>
-            m.id === loadingId
-              ? { id: m.id, type: "error" as const, message, userMessage }
-              : m
-          )
-        );
-        setState("error");
+        const message = err instanceof Error ? err.message : "Analysis failed.";
+        replaceLoadingWith(loadingId, {
+          id: loadingId,
+          type: "error",
+          message,
+          userMessage,
+        });
       }
     },
-    [queryClient]
+    [queryClient, replaceLoadingWith]
   );
 
-  const onAnalyzeAnother = useCallback(() => {
-    setState("idle");
-  }, []);
+  const handleGeneralQuestion = useCallback(
+    async (userMessage: string, loadingId: string) => {
+      const apiKey = env.VITE_GEMINI_API_KEY?.trim();
+      if (!apiKey) {
+        replaceLoadingWith(loadingId, {
+          id: loadingId,
+          type: "error",
+          message: "Gemini API key is not set. Add VITE_GEMINI_API_KEY to your .env.",
+          userMessage,
+        });
+        return;
+      }
+
+      try {
+        const [marketResult, symbolsResult] = await Promise.all([
+          queryClient.fetchQuery(trpc.getMarketData.queryOptions()),
+          queryClient.fetchQuery(trpc.getAvailableSymbols.queryOptions()),
+        ]);
+
+        const marketRows = marketResult?.ok ? marketResult.rows : [];
+        const symbols = symbolsResult?.ok ? symbolsResult.symbols : [];
+        const topList =
+          marketRows.length > 0
+            ? marketRows
+                .slice(0, 50)
+                .map((r) => `${r.symbol} (${r.name}) - $${r.priceStr}`)
+                .join("\n")
+            : symbols.length > 0
+              ? "Available symbols: " + symbols.join(", ")
+              : "No market data available yet.";
+        const context = `Stocks we track (symbol, name, price):\n${topList}`;
+
+        const response = await getGeneralResponse(apiKey, userMessage, context);
+
+        if ("error" in response && response.error) {
+          replaceLoadingWith(loadingId, {
+            id: loadingId,
+            type: "error",
+            message: response.message,
+            userMessage,
+          });
+          return;
+        }
+
+        if ("text" in response) {
+          replaceLoadingWith(loadingId, {
+            id: loadingId,
+            type: "assistantText",
+            text: response.text,
+            userMessage,
+          });
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Something went wrong.";
+        replaceLoadingWith(loadingId, {
+          id: loadingId,
+          type: "error",
+          message,
+          userMessage,
+        });
+      }
+    },
+    [queryClient, replaceLoadingWith]
+  );
+
+  const handleCompare = useCallback(
+    async (tickers: string[], userMessage: string, loadingId: string) => {
+      const apiKey = env.VITE_GEMINI_API_KEY?.trim();
+      if (!apiKey) {
+        replaceLoadingWith(loadingId, {
+          id: loadingId,
+          type: "error",
+          message: "Gemini API key is not set.",
+          userMessage,
+        });
+        return;
+      }
+
+      try {
+        const marketResult = await queryClient.fetchQuery(trpc.getMarketData.queryOptions());
+        const marketRows = marketResult?.ok ? marketResult.rows : [];
+
+        const parts: string[] = [];
+        for (const ticker of tickers.slice(0, 5)) {
+          const symbol = ticker.toUpperCase().replace(/[^A-Z0-9\-.]/g, "");
+          const [historyResult, newsResult] = await Promise.all([
+            queryClient.fetchQuery(trpc.getStockHistory.queryOptions({ symbol })),
+            queryClient.fetchQuery(trpc.getStockNews.queryOptions({ symbol })),
+          ]);
+          const ohlc = historyResult?.ok ? historyResult.data : [];
+          const newsItems = newsResult?.ok ? newsResult.items : [];
+          const row = marketRows.find((r) => r.symbol.toUpperCase() === symbol);
+
+          const priceData = derivePriceDataFromOhlc(symbol, ohlc, {
+            currentPrice: row?.price,
+            changePercent: row?.changePercent,
+          });
+          const newsData = mapNewsToNewsData(symbol, newsItems);
+          const promptBlock = buildAnalysisPrompt(
+            symbol,
+            priceData,
+            null,
+            newsData
+          );
+          parts.push(`--- ${symbol} ---\n${promptBlock}`);
+        }
+
+        const context = parts.join("\n\n");
+        const response = await getGeneralResponse(
+          apiKey,
+          `Compare these stocks and answer the user's question:\n\n${userMessage}`,
+          context
+        );
+
+        if ("error" in response && response.error) {
+          replaceLoadingWith(loadingId, {
+            id: loadingId,
+            type: "error",
+            message: response.message,
+            userMessage,
+          });
+          return;
+        }
+
+        if ("text" in response) {
+          replaceLoadingWith(loadingId, {
+            id: loadingId,
+            type: "assistantText",
+            text: response.text,
+            userMessage,
+          });
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Comparison failed.";
+        replaceLoadingWith(loadingId, {
+          id: loadingId,
+          type: "error",
+          message,
+          userMessage,
+        });
+      }
+    },
+    [queryClient, replaceLoadingWith]
+  );
+
+  const submitMessage = useCallback(
+    (userMessage: string) => {
+      const tickers = parseTickersFromInput(userMessage);
+      const ticker = tickers.length > 0 ? tickers[tickers.length - 1]! : "";
+
+      const userEntry: ChatEntry = {
+        id: nextId(),
+        type: "user",
+        content: userMessage,
+        ticker: ticker || "?",
+      };
+      const loadingId = nextId();
+      const loadingEntry: ChatEntry = {
+        id: loadingId,
+        type: "loading",
+        userMessage,
+        tickers,
+      };
+      setMessages((prev) => [...prev, userEntry, loadingEntry]);
+      setState("loading");
+
+      if (tickers.length === 0) {
+        handleGeneralQuestion(userMessage, loadingId);
+      } else if (tickers.length === 1) {
+        runSingleAnalysis(tickers[0]!, userMessage, loadingId);
+      } else {
+        handleCompare(tickers, userMessage, loadingId);
+      }
+    },
+    [handleGeneralQuestion, runSingleAnalysis, handleCompare]
+  );
+
+  const onAnalyzeAnother = useCallback(() => setState("idle"), []);
 
   const userEntries = messages.filter(
     (m): m is Extract<ChatEntry, { type: "user" }> => m.type === "user"
@@ -217,26 +352,23 @@ export default function Lab() {
 
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] flex-col">
-      <div className="container mx-auto max-w-4xl px-4 py-6">
-        <h1 className="mb-2 text-2xl font-semibold">
+      <div className="w-full max-w-4xl mx-auto px-4 py-6 flex flex-col flex-1 min-h-0">
+        <h1 className="mb-2 text-2xl font-semibold text-center">
           Chatroom & Prediction Lab
         </h1>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground text-center">
           Ask about a stock to get an AI-powered analysis and prediction.
         </p>
-      </div>
-
-      <div className="flex flex-1 flex-col min-h-0 px-4 pb-4">
         <div
           ref={feedRef}
           className={cn(
-            "flex-1 overflow-y-auto space-y-4 container max-w-4xl w-full py-4",
+            "flex-1 overflow-y-auto space-y-4 w-full py-4 min-h-0",
             !hasMessages && "flex items-center justify-center"
           )}
         >
           {!hasMessages && (
             <p className="text-sm text-muted-foreground text-center">
-              Type a question like &quot;Analyze AAPL&quot; or &quot;What about TSLA?&quot;
+              Ask anything: &quot;Analyze AAPL&quot;, &quot;List stocks&quot;, &quot;Tips?&quot;, &quot;Compare AAPL and MSFT&quot;
             </p>
           )}
           {messages.map((entry) => {
@@ -253,6 +385,12 @@ export default function Lab() {
               );
             }
             if (entry.type === "loading") {
+              const label =
+                entry.tickers.length === 0
+                  ? "Thinking…"
+                  : entry.tickers.length === 1
+                    ? `Analyzing ${entry.tickers[0]}…`
+                    : `Comparing ${entry.tickers.join(", ")}…`;
               return (
                 <div key={entry.id} className="flex justify-start">
                   <div className="flex items-center gap-2 rounded-2xl rounded-bl-md bg-muted px-4 py-3 text-sm text-muted-foreground">
@@ -261,7 +399,16 @@ export default function Lab() {
                       <span className="h-2 w-2 animate-bounce rounded-full bg-current [animation-delay:-0.15s]" />
                       <span className="h-2 w-2 animate-bounce rounded-full bg-current" />
                     </span>
-                    Analyzing {entry.ticker}…
+                    {label}
+                  </div>
+                </div>
+              );
+            }
+            if (entry.type === "assistantText") {
+              return (
+                <div key={entry.id} className="flex justify-start">
+                  <div className="max-w-[85%] rounded-2xl rounded-bl-md bg-muted px-4 py-3 text-sm text-foreground shadow-sm whitespace-pre-wrap">
+                    {entry.text}
                   </div>
                 </div>
               );
@@ -291,14 +438,14 @@ export default function Lab() {
         </div>
 
         {previousTickers.length > 0 && (
-          <div className="container max-w-4xl w-full py-2">
+          <div className="w-full py-2">
             <p className="text-xs text-muted-foreground mb-2">Previous searches</p>
             <div className="flex flex-wrap gap-2">
               {previousTickers.map(({ ticker, content }, idx) => (
                 <button
                   key={`prev-${ticker}-${idx}`}
                   type="button"
-                  onClick={() => runAnalysis(ticker, content)}
+                  onClick={() => submitMessage(content)}
                   disabled={isLoading}
                   className="rounded-full border border-input bg-background px-3 py-1.5 text-xs font-medium hover:bg-muted transition-colors disabled:opacity-50"
                 >
@@ -309,9 +456,9 @@ export default function Lab() {
           </div>
         )}
 
-        <div className="container max-w-4xl w-full pt-2">
+        <div className="w-full pt-2">
           <AnalysisInput
-            onSubmit={runAnalysis}
+            onSubmit={submitMessage}
             disabled={isLoading}
           />
         </div>
