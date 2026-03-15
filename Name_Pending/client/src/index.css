@@ -47,15 +47,6 @@ main::-webkit-scrollbar,
   transform: translateY(-2px);
 }
 
-/* Hero PI: theme color + glow (no white, no float) */
-.hero-pi-title {
-  color: var(--foreground);
-  text-shadow:
-    0 0 20px color-mix(in oklch, var(--accent) 50%, transparent),
-    0 0 40px color-mix(in oklch, var(--accent) 30%, transparent);
-  filter: drop-shadow(0 0 20px color-mix(in oklch, var(--accent) 40%, transparent));
-}
-
 /* Scroll-in: content floats in as you scroll */
 .scroll-reveal {
   opacity: 0;

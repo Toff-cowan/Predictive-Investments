@@ -63,36 +63,30 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-full bg-background">
-      {/* Full-width hero: image with PI centered (no float), theme glow */}
-      <section className="relative w-full min-h-[320px] sm:min-h-[380px] md:min-h-[420px] bg-muted">
-        <div className="absolute inset-0 flex items-center justify-center">
-          <img
-            src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=1200&q=80"
-            alt=""
-            className="h-full w-full object-contain"
-            role="presentation"
-          />
-          <div className="absolute inset-0 bg-foreground/30 pointer-events-none" aria-hidden />
-        </div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <h1 className="hero-pi-title text-5xl font-bold tracking-tight sm:text-6xl md:text-7xl lg:text-8xl">
-            PI
-          </h1>
-        </div>
-        <div className="absolute bottom-0 left-0 right-0 bg-foreground/80 px-4 py-3 backdrop-blur-sm">
-          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-x-4 gap-y-2 text-sm text-background">
-            <div>
-              <span className="font-semibold">Predictive Investments</span>
-              <span className="ml-2 text-background/80">· Dashboard</span>
-            </div>
-            {scrapedAt && (
-              <span className="text-background/90">Market data as of {scrapedAt}</span>
-            )}
-          </div>
-        </div>
-      </section>
-
       <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        {/* Hero: two columns, title + image */}
+        <section className="relative mb-8 flex flex-col overflow-hidden rounded-2xl border border-border bg-card md:flex-row">
+          <div className="relative z-10 flex flex-1 flex-col justify-center px-6 py-10 sm:px-8 sm:py-12 md:px-10 lg:py-14">
+            <h1 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl md:text-5xl">
+              Dashboard
+            </h1>
+            <p className="mt-2 max-w-xl text-base text-muted-foreground sm:text-lg">
+              Welcome back! Here&apos;s your portfolio overview.
+            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+              {scrapedAt && (
+                <span>Market data as of {scrapedAt}</span>
+              )}
+            </div>
+          </div>
+          <div className="relative h-48 w-full shrink-0 md:h-auto md:min-h-[240px] md:w-[42%] lg:min-h-[280px]">
+            <img
+              src="https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=800&q=80"
+              alt="Charts and financial data"
+              className="absolute inset-0 h-full w-full object-cover md:rounded-r-2xl [border-inline-start:1px_solid_var(--border)]"
+            />
+          </div>
+        </section>
         <ScrollReveal>
           <WinLossChart />
         </ScrollReveal>
