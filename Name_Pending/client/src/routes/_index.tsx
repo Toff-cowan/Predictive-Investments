@@ -21,8 +21,8 @@ const TITLE_TEXT = `
 
 export function meta({}: MetaArgs) {
   return [
-    { title: "Dashboard | Name_Pending" },
-    { name: "description", content: "Name_Pending dashboard" },
+    { title: "Dashboard | PI - Predictive Investments" },
+    { name: "description", content: "PI - Predictive Investments dashboard" },
   ];
 }
 

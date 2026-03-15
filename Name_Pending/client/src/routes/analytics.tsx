@@ -4,7 +4,7 @@ import type { Route } from "./+types/analytics";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Graphs & Analytics | Name_Pending" },
+    { title: "Graphs & Analytics | PI - Predictive Investments" },
     { name: "description", content: "Charts, graphs, and analytics" },
   ];
 }

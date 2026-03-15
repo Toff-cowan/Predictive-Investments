@@ -53,6 +53,7 @@ function findYahooOutputDir(): string {
     const candidates = [
       path.join(cwd, "scripts", "yahoo_top_100_output"),
       path.join(cwd, "server", "scripts", "yahoo_top_100_output"),
+      path.join(cwd, "pi", "server", "scripts", "yahoo_top_100_output"),
       path.join(cwd, "Name_Pending", "server", "scripts", "yahoo_top_100_output"),
       path.join(cwd, "Name_pending", "server", "scripts", "yahoo_top_100_output"),
     ];

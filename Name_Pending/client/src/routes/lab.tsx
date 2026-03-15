@@ -2,7 +2,7 @@ import type { Route } from "./+types/lab";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Chatroom & Prediction Lab | Name_Pending" },
+    { title: "Chatroom & Prediction Lab | PI - Predictive Investments" },
     { name: "description", content: "Chatroom and prediction lab" },
   ];
 }

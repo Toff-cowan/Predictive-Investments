@@ -1,4 +1,4 @@
-# Name_Pending
+# PI — Predictive Investments
 
 This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, React Router, Express, TRPC, and more.
 
@@ -64,7 +64,7 @@ npx shadcn@latest add accordion dialog popover sheet table -c packages/ui
 Import shared components like this:
 
 ```tsx
-import { Button } from "@Name_Pending/ui/components/button";
+import { Button } from "@pi/ui/components/button";
 ```
 
 ### Add app-specific blocks
@@ -74,7 +74,7 @@ If you want to add app-specific blocks instead of shared primitives, run the sha
 ## Project Structure
 
 ```
-Name_Pending/
+pi/
 ├── client/          # Frontend application (React + React Router)
 ├── server/          # Backend API (Express, TRPC)
 ├── packages/

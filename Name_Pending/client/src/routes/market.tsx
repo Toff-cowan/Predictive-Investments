@@ -6,13 +6,13 @@ import { Maximize2, Minimize2, Search, TrendingDown, TrendingUp, X } from "lucid
 import { useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/utils/trpc";
 import type { Route } from "./+types/market";
-import type { MarketRow, NewsItem } from "@Name_Pending/api/routers/index";
-import type { OHLC } from "@Name_Pending/api/routers/index";
+import type { MarketRow, NewsItem } from "@pi/api/routers/index";
+import type { OHLC } from "@pi/api/routers/index";
 import "@/styles/market.css";
 
 export function meta({}: Route.MetaArgs) {
   return [
-    { title: "Market Details | Name_Pending" },
+    { title: "Market Details | PI - Predictive Investments" },
     { name: "description", content: "View top 100 stocks with candlestick views and details" },
   ];
 }
