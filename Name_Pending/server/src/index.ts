@@ -1,9 +1,12 @@
 import { createContext } from "@Name_Pending/api/context";
+import { getCsvPathByRelativePath, getPredictedCsvPath } from "@Name_Pending/api/routers/index";
 import { appRouter } from "@Name_Pending/api/routers/index";
 import { env } from "@Name_Pending/env/server";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import cors from "cors";
 import express from "express";
+import fs from "node:fs";
+import path from "node:path";
 
 import { createDefaultProviders } from "./ingestion/adapters";
 import { startIngestionWorkers } from "./ingestion/workers";
@@ -30,21 +33,6 @@ app.use(express.json());
 
 app.get("/", (_req, res) => {
   res.status(200).send("OK");
-});
-
-const stopIngestionWorkers = startIngestionWorkers(createDefaultProviders());
-const stopFeatureWorker = startFeatureWorker();
-
-process.on("SIGINT", () => {
-  stopIngestionWorkers();
-  stopFeatureWorker();
-  process.exit(0);
-});
-
-process.on("SIGTERM", () => {
-  stopIngestionWorkers();
-  stopFeatureWorker();
-  process.exit(0);
 });
 
 app.listen(3000, () => {

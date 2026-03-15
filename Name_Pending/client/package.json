@@ -9,6 +9,8 @@
     "typecheck": "react-router typegen && tsc"
   },
   "dependencies": {
+    "@fontsource-variable/geist": "^5.2.8",
+    "@fontsource-variable/geist-mono": "^5.2.7",
     "@Name_Pending/api": "*",
     "@Name_Pending/env": "*",
     "@Name_Pending/ui": "*",

@@ -1,3 +1,7 @@
+import * as child_process from "node:child_process";
+import * as fs from "node:fs";
+import * as path from "node:path";
+import { z } from "zod";
 import { publicProcedure, router } from "../index";
 import { z } from "zod";
 import { generateTradeRecommendation } from "../chat/service";

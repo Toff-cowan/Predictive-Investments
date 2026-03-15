@@ -10,6 +10,7 @@ import {
   Scripts,
   ScrollRestoration,
 } from "react-router";
+import { useRef } from "react";
 
 import type { Route } from "./+types/root";
 import { queryClient } from "./utils/trpc";
@@ -48,6 +49,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const mainScrollRef = useRef<HTMLDivElement>(null);
+
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider
