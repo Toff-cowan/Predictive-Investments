@@ -702,5 +702,8 @@ export const appRouter = router({
         }
       }
     ),
+  auth: {
+    me: publicProcedure.query(({ ctx }) => ctx.session?.user ?? null),
+  },
 });
 export type AppRouter = typeof appRouter;

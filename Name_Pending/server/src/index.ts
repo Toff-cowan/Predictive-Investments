@@ -3,10 +3,12 @@ import { getCsvPathByRelativePath, getPredictedCsvPath } from "@pi/api/routers/i
 import { appRouter } from "@pi/api/routers/index";
 import { env } from "@pi/env/server";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";
 import fs from "node:fs";
 import path from "node:path";
+import { handleLogin, handleLogout, handleSignup } from "./auth";
 
 const app = express();
 
@@ -21,8 +23,11 @@ app.use(
       cb(null, false);
     },
     methods: ["GET", "POST", "OPTIONS"],
+    credentials: true,
   }),
 );
+app.use(express.json());
+app.use(cookieParser());
 
 app.use(
   "/trpc",
@@ -32,7 +37,10 @@ app.use(
   }),
 );
 
-app.use(express.json());
+/** Auth: signup, login, logout (session cookie). Features work without logging in. */
+app.post("/auth/signup", handleSignup);
+app.post("/auth/login", handleLogin);
+app.post("/auth/logout", handleLogout);
 
 app.get("/", (_req, res) => {
   res.status(200).send("OK");
