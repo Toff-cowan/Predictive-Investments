@@ -10,6 +10,8 @@
   "scripts": {
     "dev": "npx turbo dev",
     "build": "npx turbo build",
+    "build:render": "npm install && npx turbo build -F server",
+    "check-types": "npx turbo check-types",
     "check-types": "npx turbo check-types",
     "dev:web": "npx turbo -F web dev",
     "dev:server": "npx turbo -F server dev",
